@@ -46,6 +46,7 @@ void DisplayHandler(void)
 
 int main(int argc, char** argv)
 {
+	
 	glutInit(&argc, argv);
     glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL );
 	glutInitWindowPosition(10, 50);
