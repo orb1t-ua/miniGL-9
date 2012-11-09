@@ -1,8 +1,4 @@
 miniGL
 ======
-A place to hold super simple OpenGL demo code with minimum dependencies. Each cpp file is self contained standalone executable. Everything is built in Xcode 4.3.3. 
+A place to hold super simple OpenGL demo code with minimum dependencies. Each cpp file is a self-contained standalone executable. Everything is built in Xcode 4.3.3. using framework OpenGL, GLUT, and GLEW. 
 
-
-glutSimple_main.cpp : OpenGL, GLUT 
-
-glslSimple_main.cpp : OpenGL, GLUT, GLEW
