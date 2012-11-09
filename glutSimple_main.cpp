@@ -3,7 +3,7 @@
 //  glutSimple
 //
 //  Created by Xian Xiao on 8/11/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012  All rights reserved.
 //
 #include <GLUT/glut.h>
 
@@ -12,18 +12,16 @@ int g_dyWindow = 600;
 
 void ReshapeHandler(int w, int h)
 {
-	// Stores the width and height
-	g_dxWindow = w;
-	g_dyWindow = h;
-    
+    // Stores the width and height
+    g_dxWindow = w;
+    g_dyWindow = h;
     // Viewport transform
     glViewport(0, 0, (GLsizei)g_dxWindow, (GLsizei)g_dyWindow);
-    
     // Perspective projection transform
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0f, (float)(g_dxWindow)/g_dyWindow, 1.0f, 1000.0f); // FOV, AspectRatio, NearClip, FarClip
-    
+    // FOV, AspectRatio, NearClip, FarClip
+    gluPerspective(60.0f, (float)(g_dxWindow)/g_dyWindow, 1.0f, 1000.0f); 
     // Switch to modelview matrix in order to set scene
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -46,17 +44,14 @@ void DisplayHandler(void)
 
 int main(int argc, char** argv)
 {
-	
-	glutInit(&argc, argv);
+    glutInit(&argc, argv);
     glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL );
-	glutInitWindowPosition(10, 50);
-	glutInitWindowSize(g_dxWindow, g_dyWindow);
-	glutCreateWindow("GLUT Simplest Demo");
+    glutInitWindowPosition(10, 50);
+    glutInitWindowSize(g_dxWindow, g_dyWindow);
+    glutCreateWindow("GLUT Simplest Demo");
     glClearColor(0.0, 0.0, 0.0, 1.0);
-	glutDisplayFunc(DisplayHandler);
-	glutReshapeFunc(ReshapeHandler);
-	glutMainLoop();
-    
-	return 0;
+    glutDisplayFunc(DisplayHandler);
+    glutReshapeFunc(ReshapeHandler);
+    glutMainLoop();    
+    return 0;
 }
-

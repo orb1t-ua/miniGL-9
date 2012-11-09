@@ -137,12 +137,12 @@ static void compile_shaders()
     
     glLinkProgram(g_shaderProgram);
     glGetProgramiv(g_shaderProgram, GL_LINK_STATUS, &Success);
-	if (Success == 0) 
+    if (Success == 0) 
     {
-		glGetProgramInfoLog(g_shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
-		cout<< "Error linking shader program : "<<ErrorLog<<endl;
+        glGetProgramInfoLog(g_shaderProgram, sizeof(ErrorLog), NULL, ErrorLog);
+        cout<< "Error linking shader program : "<<ErrorLog<<endl;
         return; 
-	}
+    }
     
     glValidateProgram(g_shaderProgram);
     glGetProgramiv(g_shaderProgram, GL_VALIDATE_STATUS, &Success);
