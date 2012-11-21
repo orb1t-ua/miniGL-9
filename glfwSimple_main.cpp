@@ -23,7 +23,7 @@ using namespace std;
 static const char* pVS = "                                     \n \
 #version 150                                                   \n \
                                                                \n \
-uniform mat4 viewMatrix, projMatrix;                           \n \
+uniform mat4 viewMatrix, modelMatrix, projMatrix;              \n \
 in vec4 position;                                              \n \
 in vec3 color;                                                 \n \
                                                                \n \
@@ -32,7 +32,8 @@ out vec3 Color;                                                \n \
 void main(void)                                                \n \
 {                                                              \n \
     Color = color;                                             \n \
-    gl_Position = projMatrix * viewMatrix * position ;         \n \
+    vec4 wp = modelMatrix * position;                          \n \
+    gl_Position = projMatrix * viewMatrix * wp ;               \n \
 }";
 
 //--------------------------------------------------------------------------------------
@@ -148,10 +149,20 @@ GLuint p,v,f;
 GLuint vertexLoc, colorLoc;
 
 // Uniform variable Locations
-GLuint projMatrixLoc, viewMatrixLoc;
+GLuint modelMatrixLoc, projMatrixLoc, viewMatrixLoc;
 
 // Vertex Array Objects Identifiers
 GLuint vao[2];
+
+// Mouse movement variables:
+int         g_mouseX        = 0;
+int         g_mouseY        = 0;
+float       g_cameraDist    = 0.f;
+float       g_cameraAngleX  = 15.f;
+float       g_cameraAngleY  = 0.f;
+bool        g_rightDown     = false;
+bool        g_leftDown      = false;
+
 
 // storage for Matrices
 float projMatrix[16];
@@ -224,6 +235,38 @@ void setTranslationMatrix(float *mat, float x, float y, float z)
 }
 
 //--------------------------------------------------------------------------------------
+//  Defines a transformation matrix mat with a rotation along an axis 
+//--------------------------------------------------------------------------------------
+void setRotationMatrix( float *mat, float angle, const short axis )
+{
+    //setIdentityMatrix(mat, 4);
+    
+    angle *= 3.1415926 / 180. ;
+    
+    if( axis == 0 )
+    {
+        mat[ 1 * 4 + 1 ] = cos( angle );
+        mat[ 1 * 4 + 2 ] = sin( angle );
+        mat[ 2 * 4 + 1 ] = -sin( angle );
+        mat[ 2 * 4 + 2 ] = cos( angle );
+    }
+    else if( axis == 1 )
+    {
+        mat[ 0 * 4 + 0 ] = cos( angle );
+        mat[ 0 * 4 + 2 ] = -sin( angle );
+        mat[ 2 * 4 + 0 ] = sin( angle );
+        mat[ 2 * 4 + 2 ] = cos( angle );
+    }
+    else if(axis == 2 )
+    {
+        mat[0*4 + 0 ] = cos( angle );
+        mat[0*4 + 1] = sin( angle );
+        mat[ 1*4 + 0 ] = -sin( angle );
+        mat[ 1*4 + 1 ] = cos( angle );
+    }
+}
+
+//--------------------------------------------------------------------------------------
 //  Projection Matrix
 //--------------------------------------------------------------------------------------
 void buildProjectionMatrix(float fov, float ratio, float nearP, float farP)
@@ -238,7 +281,7 @@ void buildProjectionMatrix(float fov, float ratio, float nearP, float farP)
     projMatrix[2 * 4 + 3] = -1.0f;
     projMatrix[3 * 4 + 3] = 0.0f;
 }
-    
+
 //--------------------------------------------------------------------------------------
 // View Matrix
 //
@@ -261,7 +304,7 @@ void setCamera(float posX, float posY, float posZ,
     
     crossProduct(dir,up,right);
     normalize(right);
-
+    
     crossProduct(right,dir,up);
     normalize(up);
     
@@ -302,7 +345,7 @@ void changeSize(int w, int h)
     // Prevent a divide by zero, when window is too short
     // (you cant make a window of zero width).
     h =  (h == 0 ? 1 : h );
-        
+    
     // Set the viewport to be the entire window
     glViewport(0, 0, w, h);
     
@@ -318,7 +361,7 @@ void setupBuffers()
     GLuint buffers[2];
     
     glGenVertexArrays(2, vao);
- 
+    
     // VAO for cubes: 
     glBindVertexArray(vao[0]);
     // Generate two slots for the vertex and color buffers
@@ -361,8 +404,10 @@ void setupBuffers()
 void setUniforms() 
 {
     // must be called after glUseProgram
+    
     glUniformMatrix4fv(projMatrixLoc,  1, false, projMatrix);
     glUniformMatrix4fv(viewMatrixLoc,  1, false, viewMatrix);
+    
 }
 
 //--------------------------------------------------------------------------------------
@@ -371,14 +416,36 @@ void setUniforms()
 void renderScene(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    setCamera( 3.5,2, 4, -2,-1,-2);
+    
+    setCamera( 4, 2, 4, 0, 0, -1 );
     
     glUseProgram(p);
     setUniforms();
     
+    //set model matrix: 
+    float mat[16];
+    setIdentityMatrix( mat, 4 );
+    
+    // translation based on camera distance
+    setTranslationMatrix(mat, g_cameraDist , g_cameraDist, g_cameraDist );
+    
+    // Rotation along X axis
+    setRotationMatrix(mat, g_cameraAngleX, 0 );
+    
+    // Rotation along Y axis
+    float rotY[16];
+    setIdentityMatrix( rotY, 4 );
+    setRotationMatrix(rotY, g_cameraAngleY, 1 );
+    multMatrix( mat, rotY );
+    
+    // Set modeling matrix
+    glUniformMatrix4fv(modelMatrixLoc, 1, false, mat );
     glBindVertexArray(vao[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36 );
+    
+    //Set identity modleing matrix for Axis:
+    setTranslationMatrix(mat, 0 , 0, 0 );
+    glUniformMatrix4fv(modelMatrixLoc, 1, false, mat );
     
     glBindVertexArray(vao[1]);
     glDrawArrays(GL_LINES, 0, 6);
@@ -425,12 +492,56 @@ GLuint setupShaders()
     vertexLoc = glGetAttribLocation(p,"position");
     colorLoc = glGetAttribLocation(p, "color"); 
     
+    modelMatrixLoc = glGetUniformLocation(p, "modelMatrix");
     projMatrixLoc = glGetUniformLocation(p, "projMatrix");
     viewMatrixLoc = glGetUniformLocation(p, "viewMatrix");
     
     return(p);
 }
 
+//--------------------------------------------------------------------------------------
+// Record the mouse screen coordinates and working out the movement
+//--------------------------------------------------------------------------------------
+void mouse_move( int x, int y )
+{
+    if(g_leftDown)
+    {
+        g_cameraAngleY += (x - g_mouseX);
+        g_cameraAngleX += (y - g_mouseY);
+        g_mouseX = x;
+        g_mouseY = y;
+    }
+    
+    if(g_rightDown)
+    {
+        g_cameraDist -= (y - g_mouseY) * 0.2f;
+        g_mouseY = y;
+    }
+}
+
+//--------------------------------------------------------------------------------------
+// Record the mouse button and press event, working out the movement
+//--------------------------------------------------------------------------------------
+void mouse_button( int button, int event )
+{
+    int x, y; 
+    glfwGetMousePos(&x, &y);
+    
+    g_mouseX = x;
+    g_mouseY = y;
+    
+    if( GLFW_MOUSE_BUTTON_LEFT == button )
+    {
+        if( event == GLFW_PRESS ) g_leftDown = true; 
+        else if( event == GLFW_RELEASE ) g_leftDown = false;    
+    }
+    else if( GLFW_MOUSE_BUTTON_RIGHT == button )
+    {
+        if( event == GLFW_PRESS ) g_rightDown = true; 
+        else if( event == GLFW_RELEASE ) g_rightDown = false;  
+    }
+    
+}
 int main(int argc, char **argv) 
 {
     int running = GL_TRUE;
@@ -452,9 +563,13 @@ int main(int argc, char **argv)
     
     p = setupShaders();
     setupBuffers();
-        
+    
     glClearColor(1.0,1.0,1.0,1.0);
     glEnable(GL_DEPTH_TEST );
+    
+    // Add mouse motion callbacks: 
+    glfwSetMousePosCallback( mouse_move );
+    glfwSetMouseButtonCallback( mouse_button );
     
     // Main loop
     while( running )
@@ -470,7 +585,7 @@ int main(int argc, char **argv)
         
         // Check if ESC key was pressed or window was closed
         running = !glfwGetKey( GLFW_KEY_ESC ) &&
-            glfwGetWindowParam( GLFW_OPENED );
+        glfwGetWindowParam( GLFW_OPENED );
     }
     
     // Close window and terminate GLFW
