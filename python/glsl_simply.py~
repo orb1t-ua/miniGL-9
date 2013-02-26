@@ -43,18 +43,21 @@ class GLClass:
         self.Splash = True    #There's actually more here, but it's impertinent
         self.g_dxWindow = 800
         self.g_dyWindow = 600
+        self.g_mouseX = 0
+        self.g_mouseY = 0
         self.g_cameraDist = 5.0
         self.g_cameraAngleX = 15
         self.g_cameraAngleY = 0
-
+        self.g_rightDown = False
+        self.g_leftDown = False
     def run(self):
         glutInitDisplayMode(GLUT_RGBA)
         glutInitWindowSize( self.g_dxWindow, self.g_dyWindow )
         self.window = glutCreateWindow("GLSL Phong")
-        glVer = glGetString( GL_VERSION )
-        print( glVer )
-        shaderVer = glGetString( GL_SHADING_LANGUAGE_VERSION )
-        print( shaderVer )
+        ver = glGetString( GL_VERSION )
+        print( ver )
+        ver = glGetString( GL_SHADING_LANGUAGE_VERSION )
+        print( ver )
         glutReshapeFunc(self.reshape)
         glutDisplayFunc(self.draw)
         self.g_shaderProgram = compileProgram( compileShader( pVS, GL_VERTEX_SHADER ), 
